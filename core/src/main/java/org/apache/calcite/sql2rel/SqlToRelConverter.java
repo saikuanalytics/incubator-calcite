@@ -3841,6 +3841,11 @@ public class SqlToRelConverter {
     }
 
     void registerSubquery(SqlNode node, RelOptUtil.Logic logic) {
+      for (SubQuery subQuery : subqueryList) {
+        if (node.equalsDeep(subQuery.node, false)) {
+          return;
+        }
+      }
       subqueryList.add(new SubQuery(node, logic));
     }
 
@@ -3886,8 +3891,6 @@ public class SqlToRelConverter {
         return rex;
       }
 
-      boolean needTruthTest;
-
       // Sub-queries and OVER expressions are not like ordinary
       // expressions.
       final SqlKind kind = expr.getKind();
@@ -3910,10 +3913,6 @@ public class SqlToRelConverter {
         rex = subQuery.expr;
         assert rex != null : "rex != null";
 
-        if (kind == SqlKind.CURSOR) {
-          // cursor reference is pre-baked
-          return rex;
-        }
         if (((kind == SqlKind.SCALAR_QUERY)
             || (kind == SqlKind.EXISTS))
             && isConvertedSubq(rex)) {
@@ -3922,11 +3921,8 @@ public class SqlToRelConverter {
           return rex;
         }
 
-        RexNode fieldAccess;
-        needTruthTest = false;
-
         // The indicator column is the last field of the subquery.
-        fieldAccess =
+        RexNode fieldAccess =
             rexBuilder.makeFieldAccess(
                 rex,
                 rex.getType().getFieldCount() - 1);
@@ -3934,13 +3930,8 @@ public class SqlToRelConverter {
         // The indicator column will be nullable if it comes from
         // the null-generating side of the join. For EXISTS, add an
         // "IS TRUE" check so that the result is "BOOLEAN NOT NULL".
-        if (fieldAccess.getType().isNullable()) {
-          if (kind == SqlKind.EXISTS) {
-            needTruthTest = true;
-          }
-        }
-
-        if (needTruthTest) {
+        if (fieldAccess.getType().isNullable()
+            && kind == SqlKind.EXISTS) {
           fieldAccess =
               rexBuilder.makeCall(
                   SqlStdOperatorTable.IS_NOT_NULL,

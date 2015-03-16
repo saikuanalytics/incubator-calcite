@@ -97,8 +97,8 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
 
   /**
    * Test case for
-   * <a href="https://issues.apache.org/jira/browse/CALCITE-245">CALCITE-245</a>,
-   * "Off-by-one translation of ON clause of JOIN".
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-245">[CALCITE-245]
+   * Off-by-one translation of ON clause of JOIN</a>.
    */
   @Test public void testConditionOffByOne() {
     // Bug causes the plan to contain
@@ -132,8 +132,9 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   /** Test case for
-   * <a href="https://issues.apache.org/jira/browse/CALCITE-74">CALCITE-74</a>,
-   * "JOIN ... USING fails in 3-way join with UnsupportedOperationException". */
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-74">[CALCITE-74]
+   * JOIN ... USING fails in 3-way join with
+   * UnsupportedOperationException</a>. */
   @Test public void testJoinUsingThreeWay() {
     check(
         "select *\n"
@@ -1057,9 +1058,9 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   /** Test case for
-   * <a href="https://issues.apache.org/jira/browse/CALCITE-412">CALCITE-412</a>,
-   * "RelFieldTrimmer: when trimming Sort, the collation and trait set don't
-   * match". */
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-412">[CALCITE-412]
+   * RelFieldTrimmer: when trimming Sort, the collation and trait set don't
+   * match</a>. */
   @Test public void testSortWithTrim() {
     tester.assertConvertsTo(
         "select ename from (select * from emp order by sal) a", "${plan}",
