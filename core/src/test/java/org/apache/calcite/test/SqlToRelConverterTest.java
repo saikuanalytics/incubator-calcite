@@ -1101,6 +1101,55 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   }
 
   /**
+   * Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-614">[CALCITE-614]
+   * IN within CASE within GROUP BY gives AssertionError</a>.
+   */
+  @Test public void testGroupByCaseIn() {
+    sql("select (CASE WHEN (deptno IN (10, 20)) THEN 0 ELSE deptno END),\n"
+        + " min(empno) from EMP\n"
+        + "group by (CASE WHEN (deptno IN (10, 20)) THEN 0 ELSE deptno END)")
+        .convertsTo("${plan}");
+  }
+
+  /**
+   * Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-695">[CALCITE-695]
+   * SqlSingleValueAggFunction is created when it may not be needed</a>.
+   */
+  @Test public void testSubqueryAggreFunctionFollowedBySimpleOperation() {
+    sql("select deptno\n"
+        + "from EMP\n"
+        + "where deptno > (select min(deptno) * 2 + 10 from EMP)")
+        .convertsTo("${plan}");
+  }
+
+  /**
+   * Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-695">[CALCITE-695]
+   * SqlSingleValueAggFunction is created when it may not be needed</a>.
+   */
+  @Test public void testSubqueryValues() {
+    sql("select deptno\n"
+        + "from EMP\n"
+        + "where deptno > (values 10)")
+        .convertsTo("${plan}");
+  }
+
+  /**
+   * Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-695">[CALCITE-695]
+   * SqlSingleValueAggFunction is created when it may not be needed</a>.
+   */
+  @Test public void testSubqueryLimitOne() {
+    sql("select deptno\n"
+        + "from EMP\n"
+        + "where deptno > (select deptno \n"
+        + "from EMP order by deptno limit 1)")
+        .convertsTo("${plan}");
+  }
+
+  /**
    * Visitor that checks that every {@link RelNode} in a tree is valid.
    *
    * @see RelNode#isValid(boolean)
