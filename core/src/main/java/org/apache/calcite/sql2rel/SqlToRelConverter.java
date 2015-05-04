@@ -183,12 +183,6 @@ public class SqlToRelConverter {
   protected static final Logger SQL2REL_LOGGER =
       CalciteTrace.getSqlToRelTracer();
 
-  private static final Function<SubQuery, SqlNode> FN =
-      new Function<SubQuery, SqlNode>() {
-        public SqlNode apply(SubQuery input) {
-          return input.node;
-        }
-      };
   private static final BigDecimal TWO = BigDecimal.valueOf(2L);
 
   //~ Instance fields --------------------------------------------------------
@@ -3512,9 +3506,6 @@ public class SqlToRelConverter {
      */
     private final Set<SubQuery> subqueryList = Sets.newLinkedHashSet();
 
-    private final Map<SqlNode, SubQuery> subqueryMap =
-        Util.asIndexMap(subqueryList, FN);
-
     private boolean subqueryNeedsOuterJoin;
 
     /**
@@ -3847,6 +3838,16 @@ public class SqlToRelConverter {
       subqueryList.add(new SubQuery(node, logic));
     }
 
+    SubQuery getSubquery(SqlNode expr) {
+      for (SubQuery subQuery : subqueryList) {
+        if (expr.equalsDeep(subQuery.node, false)) {
+          return subQuery;
+        }
+      }
+
+      return null;
+    }
+
     ImmutableList<RelNode> retrieveCursors() {
       try {
         return ImmutableList.copyOf(cursors);
@@ -3887,10 +3888,18 @@ public class SqlToRelConverter {
       final SubQuery subQuery;
       switch (kind) {
       case CURSOR:
+      case IN:
+        subQuery = getSubquery(expr);
+
+        assert subQuery != null;
+        rex = subQuery.expr;
+        assert rex != null : "rex != null";
+        return rex;
+
       case SELECT:
       case EXISTS:
       case SCALAR_QUERY:
-        subQuery = subqueryMap.get(expr);
+        subQuery = getSubquery(expr);
         assert subQuery != null;
         rex = subQuery.expr;
         assert rex != null : "rex != null";
@@ -3932,12 +3941,6 @@ public class SqlToRelConverter {
                   fieldAccess);
         }
         return fieldAccess;
-
-      case IN:
-        subQuery = subqueryMap.get(expr);
-        assert subQuery != null;
-        assert subQuery.expr != null : "expr != null";
-        return subQuery.expr;
 
       case OVER:
         return convertOver(this, expr);
@@ -4012,7 +4015,7 @@ public class SqlToRelConverter {
 
     // implement SqlRexContext
     public RexRangeRef getSubqueryExpr(SqlCall call) {
-      final SubQuery subQuery = subqueryMap.get(call);
+      final SubQuery subQuery = getSubquery(call);
       assert subQuery != null;
       return (RexRangeRef) subQuery.expr;
     }
