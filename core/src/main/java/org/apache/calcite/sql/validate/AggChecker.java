@@ -125,6 +125,13 @@ class AggChecker extends SqlBasicVisitor<Void> {
       // BY deptno'
       return null;
     }
+    // Visit the operand in window function
+    if (call.getOperator().getKind() == SqlKind.OVER) {
+      SqlCall windowFunction = (SqlCall) call.operand(0);
+      if (windowFunction.getOperandList().size() != 0) {
+        windowFunction.operand(0).accept(this);
+      }
+    }
     if (isGroupExpr(call)) {
       // This call matches an expression in the GROUP BY clause.
       return null;
