@@ -1161,6 +1161,16 @@ public class RexUtil {
     }.apply(nodes);
   }
 
+  /** Returns whether an expression contains a {@link RexCorrelVariable}. */
+  public static boolean containsCorrelation(RexNode condition) {
+    try {
+      condition.accept(CorrelationFinder.INSTANCE);
+      return false;
+    } catch (Util.FoundOne e) {
+      return true;
+    }
+  }
+
   //~ Inner Classes ----------------------------------------------------------
 
   /**
@@ -1469,6 +1479,20 @@ public class RexUtil {
 
     @Override public RexNode visitInputRef(RexInputRef input) {
       return new RexInputRef(input.getIndex() + offset, input.getType());
+    }
+  }
+
+  /** Visitor that throws {@link org.apache.calcite.util.Util.FoundOne} if
+   * there an expression contains a {@link RexCorrelVariable}. */
+  private static class CorrelationFinder extends RexVisitorImpl<Void> {
+    static final CorrelationFinder INSTANCE = new CorrelationFinder();
+
+    private CorrelationFinder() {
+      super(true);
+    }
+
+    @Override public Void visitCorrelVariable(RexCorrelVariable var) {
+      throw Util.FoundOne.NULL;
     }
   }
 }
