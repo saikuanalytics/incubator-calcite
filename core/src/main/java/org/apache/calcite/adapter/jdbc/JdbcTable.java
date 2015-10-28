@@ -147,6 +147,10 @@ class JdbcTable extends AbstractQueryableTable
     if (jdbcSchema.schema != null) {
       strings.add(jdbcSchema.schema);
     }
+    else if(jdbcSchemaName != null){
+      strings.add(jdbcSchemaName);
+    }
+    
     strings.add(jdbcTableName);
     return new SqlIdentifier(strings, SqlParserPos.ZERO);
   }
